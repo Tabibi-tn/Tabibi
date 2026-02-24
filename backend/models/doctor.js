@@ -7,9 +7,12 @@ module.exports = (sequelize, DataTypes) => {
     clinicAddress: { type: DataTypes.STRING, allowNull: true },
     fee: { type: DataTypes.DECIMAL(10,2), allowNull: true },
     licenseNumber: { type: DataTypes.STRING, allowNull: true },
-    status: { type: DataTypes.ENUM('pending','approved'), defaultValue: 'pending' }
-    ,
-    availability: { type: DataTypes.JSON, allowNull: true }
+    status: { type: DataTypes.ENUM('pending','approved'), defaultValue: 'pending' },
+    availability: { type: DataTypes.JSON, allowNull: true },
+    bio: { type: DataTypes.TEXT, allowNull: true },
+    diplomaUrl: { type: DataTypes.STRING, allowNull: true },
+    licenseDocUrl: { type: DataTypes.STRING, allowNull: true },
+    additionalDocuments: { type: DataTypes.JSON, allowNull: true }
   }, {});
 
   Doctor.associate = models => {
