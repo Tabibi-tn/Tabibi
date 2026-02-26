@@ -9,10 +9,10 @@ export default function Home() {
       <p>healthcare platform </p>
 
       <div style={{ marginTop: '2rem' }}>
-        <Link to="/Register" style={{ marginRight: '1rem' }}>
+        <Link to="/register" style={{ marginRight: '1rem' }}>
           Register
         </Link>
-        <Link to="/Login">
+        <Link to="/login">
           Login
         </Link>
       </div>
