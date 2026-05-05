@@ -1,145 +1,148 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useContext } from 'react'
+import api from '../api'
+import { AuthContext } from '../contexts/AuthContext'
+import { useNavigate, Link } from 'react-router-dom'
 
-export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+export default function Login(){
+  const [email,setEmail]=useState('')
+  const [password,setPassword]=useState('')
+  const [loading,setLoading]=useState(false)
+  const [error,setError]=useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+  const { login } = useContext(AuthContext)
+  const nav = useNavigate()
 
-  const handleSubmit = (e) => {
+  const submit = async e => {
     e.preventDefault()
     setError('')
-
-    if (!email || !password) {
-      setError('Please enter email and password')
-      return
-    }
-
-    console.log({ email, password })
-    alert('Authentication system coming soon...')
+    if(!email || !password){ setError('Please enter email and password'); return }
+    try{
+      setLoading(true)
+      const res = await api.post('/auth/login',{ email, password })
+      login(res.data.token, res.data.user)
+      nav('/dashboard')
+    }catch(err){
+      setError(err?.response?.data?.message || 'Login failed. Please check your credentials.')
+    }finally{ setLoading(false) }
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      minHeight: '100vh'
-    }}>
-
-      <div style={{
-        flex: 1,
-        background: '#2563eb',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '3rem'
-      }}>
-        <h1 style={{ fontSize: '2rem' }}>Welcome Back</h1>
-        <p style={{ marginTop: '1rem', opacity: 0.9 }}>
-          Sign in to manage appointments, connect with doctors,
-          and track your healthcare journey.
-        </p>
-
-        <div style={{ marginTop: '2rem' }}>
-          <p>✔ Easy appointment booking</p>
-          <p>✔ Access to medical records</p>
-          <p>✔ Secure & private platform</p>
-        </div>
-      </div>
-
-
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '2rem'
-      }}>
-
-        <div style={{ width: '100%', maxWidth: '400px' }}>
-
-          <h2>Sign In</h2>
-          <p style={{ color: '#666' }}>
-            Enter your credentials to access your account
-          </p>
-
-          <form onSubmit={handleSubmit} style={{ marginTop: '2rem' }}>
-            <div style={{ marginBottom: '1.2rem' }}>
-              <label>Email Address</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  marginTop: '6px'
-                }}
-              />
+    <div className="auth-page">
+      <div className="auth-container">
+        {/* Left Side - Decorative Panel */}
+        <div className="auth-left">
+          <div className="auth-left-content">
+            <div className="brand-logo">
+              <span className="brand-icon">🏥</span>
+              <span className="brand-name">Tabibi</span>
             </div>
-
-            <div style={{ marginBottom: '1.2rem' }}>
-              <label>Password</label>
-              <div style={{ display: 'flex', marginTop: '6px' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  style={{
-                    flex: 1,
-                    padding: '10px'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    padding: '0 10px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
+            <h1>Welcome Back</h1>
+            <p>Connect with top healthcare professionals and manage your appointments with ease.</p>
+            <div className="auth-features">
+              <div className="feature-item">
+                <span className="feature-icon">📅</span>
+                <span>Easy appointment booking</span>
+              </div>
+              <div className="feature-item">
+                <span className="feature-icon">💬</span>
+                <span>Direct messaging with doctors</span>
+              </div>
+              <div className="feature-item">
+                <span className="feature-icon">📋</span>
+                <span>Medical records management</span>
               </div>
             </div>
+          </div>
+          <div className="auth-left-pattern"></div>
+        </div>
 
-            {error && (
-              <div style={{
-                marginBottom: '1rem',
-                color: 'red',
-                fontSize: '0.9rem'
-              }}>
-                {error}
+        {/* Right Side - Login Form */}
+        <div className="auth-right">
+          <div className="auth-form-container">
+            <div className="auth-header">
+              <h2>Sign In</h2>
+              <p>Enter your credentials to access your account</p>
+            </div>
+
+            <form onSubmit={submit} className="auth-form">
+              <div className="form-group">
+                <label htmlFor="email">Email Address</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">✉️</span>
+                  <input 
+                    id="email"
+                    type="email" 
+                    value={email} 
+                    onChange={e=>setEmail(e.target.value)} 
+                    placeholder="Enter your email"
+                    className="form-input"
+                  />
+                </div>
               </div>
-            )}
 
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
-            >
-              Sign In
-            </button>
-          </form>
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">🔒</span>
+                  <input 
+                    id="password"
+                    type={showPassword ? "text" : "password"} 
+                    value={password} 
+                    onChange={e=>setPassword(e.target.value)} 
+                    placeholder="Enter your password"
+                    className="form-input"
+                  />
+                  <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
 
-          <p style={{ marginTop: '1.5rem', fontSize: '0.9rem' }}>
-            Don't have an account?{' '}
-            <Link to="/register">Create Account</Link>
-          </p>
+              <div className="form-options">
+                <label className="checkbox-label">
+                  <input type="checkbox" />
+                  <span>Remember me</span>
+                </label>
+                <Link to="/forgot-password" className="forgot-link">Forgot password?</Link>
+              </div>
 
+              {error && (
+                <div className="form-error">
+                  <span>⚠️</span> {error}
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary btn-lg btn-block" disabled={loading}>
+                {loading ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
+            </form>
+
+            <div className="auth-footer">
+              <p>Don't have an account? <Link to="/register">Create Account</Link></p>
+            </div>
+
+            <div className="demo-accounts">
+              <p className="demo-title">Demo Accounts:</p>
+              <div className="demo-items">
+                <span>👨‍⚕️ Doctor: doctor@tabibi.test</span>
+                <span>👤 Patient: patient@tabibi.test</span>
+                <span>🔑 Password: any</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
     </div>
   )
 }
