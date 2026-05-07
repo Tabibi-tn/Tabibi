@@ -5,7 +5,14 @@ module.exports = (sequelize, DataTypes) => {
     email: { type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: true } },
     password: { type: DataTypes.STRING, allowNull: false },
     role: { type: DataTypes.ENUM('patient','doctor','admin'), allowNull: false, defaultValue: 'patient' },
-    isActive: { type: DataTypes.BOOLEAN, defaultValue: true }
+    isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+    phone: { type: DataTypes.STRING(30), allowNull: true },
+    dateOfBirth: { type: DataTypes.DATEONLY, allowNull: true },
+    address: { type: DataTypes.STRING, allowNull: true },
+    emergencyContact: { type: DataTypes.STRING, allowNull: true },
+    bloodType: { type: DataTypes.STRING(10), allowNull: true },
+    allergies: { type: DataTypes.TEXT, allowNull: true },
+    medicalConditions: { type: DataTypes.TEXT, allowNull: true }
   }, {});
 
   User.associate = models => {

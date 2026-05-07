@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import api from '../api'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 
@@ -116,17 +116,17 @@ export default function Book(){
           {doctor && (
             <div className="booking-doctor-info card">
               <div className="doctor-avatar">
-                {getInitials(doctor.name)}
+                {getInitials(doctor.User?.name || 'Doctor')}
               </div>
               <div>
-                <h3 style={{ marginBottom: '0.25rem' }}>Dr. {doctor.name}</h3>
+                <h3 style={{ marginBottom: '0.25rem' }}>Dr. {doctor.User?.name || 'Doctor'}</h3>
                 <p style={{ color: 'var(--primary)', marginBottom: '0.25rem' }}>
-                  {doctor.specialty?.name || 'General Practitioner'}
+                  {doctor.Specialty?.name || 'General Practitioner'}
                 </p>
-                {doctor.rating && (
+                {doctor.averageRating != null && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--warning)' }}>
                     <span>⭐</span>
-                    <span style={{ fontWeight: 500 }}>{doctor.rating.toFixed(1)}</span>
+                    <span style={{ fontWeight: 500 }}>{parseFloat(doctor.averageRating).toFixed(1)}</span>
                   </div>
                 )}
               </div>

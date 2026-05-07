@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useContext, Suspense } from 'react'
+import { useState, useEffect, useContext, Suspense, lazy } from 'react'
 import api from '../api'
 import { AuthContext } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
 
-const FullCalendarLoader = React.lazy(() => import('@fullcalendar/react'))
+const FullCalendarLoader = lazy(() => import('@fullcalendar/react'))
 
 export default function Availability(){
   const { user } = useContext(AuthContext)
+  const { toast } = useToast()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [doctor, setDoctor] = useState(null)
@@ -53,7 +55,7 @@ export default function Availability(){
         
         setEvents([...availabilityEvents, ...appointmentEvents])
       } catch (err) {
-        console.error('Failed to load calendar data:', err)
+        toast('Failed to load calendar data', 'error')
       }
     }
     setLoading(false)
@@ -70,8 +72,9 @@ export default function Availability(){
     
     try {
       await api.post('/doctors/me/availability', next)
+      toast('Availability saved', 'success')
     } catch (err) {
-      console.error('Failed to save availability:', err)
+      toast('Failed to save availability', 'error')
     }
   }
 
@@ -108,7 +111,12 @@ export default function Availability(){
           </div>
         </div>
 
-        <Suspense fallback={<div>Loading calendar...</div>}>
+        <Suspense fallback={
+          <div className="text-center" style={{ padding: '4rem' }}>
+            <div className="spinner"></div>
+            <p style={{ color: 'var(--gray-500)' }}>Loading calendar...</p>
+          </div>
+        }>
           {dayGridPlugin && interactionPlugin && (
             <FullCalendarLoader
               plugins={[ dayGridPlugin, interactionPlugin ]}

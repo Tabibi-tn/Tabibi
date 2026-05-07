@@ -4,26 +4,31 @@ const auth = require('../middleware/auth');
 const { Message, User } = require('../models');
 
 // send a message
-router.post('/', auth, async (req, res) => {
-  const { receiverId, content, appointmentId } = req.body;
-  if (!receiverId || !content) return res.status(400).json({ message: 'receiverId and content required' });
-  const msg = await Message.create({ senderId: req.user.id, receiverId, content, appointmentId });
-  res.status(201).json(msg);
+router.post('/', auth, async (req, res, next) => {
+  try {
+    const { receiverId, content, appointmentId } = req.body;
+    if (!receiverId || !content) return res.status(400).json({ message: 'receiverId and content required' });
+    const msg = await Message.create({ senderId: req.user.id, receiverId, content, appointmentId });
+    res.status(201).json(msg);
+  } catch (err) { next(err); }
 });
 
 // get conversation between current user and another user
-router.get('/conversation/:userId', auth, async (req, res) => {
-  const otherId = parseInt(req.params.userId, 10);
-  const msgs = await Message.findAll({
-    where: {
-      // (sender = me AND receiver = other) OR (sender = other AND receiver = me)
-    },
-    order: [['createdAt','ASC']]
-  });
-  // fallback simple query using raw SQL if necessary
-  const sql = `SELECT * FROM Messages WHERE (senderId = :me AND receiverId = :other) OR (senderId = :other AND receiverId = :me) ORDER BY createdAt ASC`;
-  const results = await Message.sequelize.query(sql, { replacements: { me: req.user.id, other: otherId }, type: Message.sequelize.QueryTypes.SELECT });
-  res.json(results);
+router.get('/conversation/:userId', auth, async (req, res, next) => {
+  try {
+    const { Op } = require('sequelize');
+    const otherId = parseInt(req.params.userId, 10);
+    const messages = await Message.findAll({
+      where: {
+        [Op.or]: [
+          { senderId: req.user.id, receiverId: otherId },
+          { senderId: otherId, receiverId: req.user.id }
+        ]
+      },
+      order: [['createdAt', 'ASC']]
+    });
+    res.json(messages);
+  } catch (err) { next(err); }
 });
 
 // Get all conversations for the logged-in user

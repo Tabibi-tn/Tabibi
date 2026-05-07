@@ -8,6 +8,10 @@ const { User, Patient, Doctor } = require('../models');
 router.post('/register', async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password are required' });
+    if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    const existing = await User.findOne({ where: { email } });
+    if (existing) return res.status(409).json({ message: 'An account with this email already exists' });
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hashed, role: role || 'patient' });
     if (user.role === 'patient') await Patient.create({ userId: user.id });
@@ -20,11 +24,12 @@ router.post('/register', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(401).json({ message: 'Invalid credentials' });
     
-    // Check if account is active
-    if (!user.isActive) return res.status(401).json({ message: 'Your account has been deactivated. Please contact admin.' });
+    // Check if account is active (guard against missing DB column — only block explicit false)
+    if (user.isActive === false) return res.status(401).json({ message: 'Your account has been deactivated. Please contact admin.' });
     
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ message: 'Invalid credentials' });

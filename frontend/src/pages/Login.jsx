@@ -1,7 +1,8 @@
-import React, { useState, useContext } from 'react'
+import { useState, useContext } from 'react'
 import api from '../api'
 import { AuthContext } from '../contexts/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
+
 
 export default function Login(){
   const [email,setEmail]=useState('')
@@ -107,7 +108,6 @@ export default function Login(){
                   <input type="checkbox" />
                   <span>Remember me</span>
                 </label>
-                <Link to="/forgot-password" className="forgot-link">Forgot password?</Link>
               </div>
 
               {error && (

@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { AuthContext } from '../contexts/AuthContext'
-import  api  from '../api'
+import api from '../api'
+import { useToast } from '../contexts/ToastContext'
 
 export default function Appointments() {
   const { user } = useContext(AuthContext)
+  const { toast } = useToast()
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -30,11 +32,12 @@ export default function Appointments() {
   const updateAppointmentStatus = async (id, status) => {
     try {
       await api.put(`/appointments/${id}`, { status })
-      setAppointments(appointments.map(apt => 
-        apt.id === id ? { ...apt, status } : apt
-      ))
+      setAppointments(appointments.map(apt => apt.id === id ? { ...apt, status } : apt))
+      const msgs = { approved: 'Appointment approved', cancelled: 'Appointment cancelled', completed: 'Appointment marked as completed' }
+      toast(msgs[status] || 'Status updated', 'success')
     } catch (err) {
-      alert('Failed to update appointment')
+      toast('Failed to update appointment. Please try again.', 'error')
+      setError('Failed to update appointment. Please try again.')
     }
   }
 
@@ -204,13 +207,13 @@ export default function Appointments() {
                     <div className="appointment-actions">
                       {user.role === 'doctor' && appointment.status === 'pending' && (
                         <>
-                          <button 
+                          <button
                             className="btn btn-sm btn-success"
                             onClick={() => updateAppointmentStatus(appointment.id, 'approved')}
                           >
                             Accept
                           </button>
-                          <button 
+                          <button
                             className="btn btn-sm btn-danger"
                             onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
                           >
@@ -218,9 +221,18 @@ export default function Appointments() {
                           </button>
                         </>
                       )}
-                      
+
+                      {user.role === 'patient' && appointment.status === 'pending' && (
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
+                        >
+                          Cancel
+                        </button>
+                      )}
+
                       {user.role === 'patient' && appointment.status === 'approved' && (
-                        <button 
+                        <button
                           className="btn btn-sm btn-primary"
                           onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
                         >
@@ -228,12 +240,21 @@ export default function Appointments() {
                         </button>
                       )}
 
-                      {user.role === 'patient' && appointment.status === 'completed' && (
-                        <Link 
-                          to={`/consultations/edit/${appointment.id}`}
+                      {user.role === 'patient' && (appointment.status === 'approved' || appointment.status === 'completed') && (
+                        <Link
+                          to={`/consultations/new?appointmentId=${appointment.id}`}
                           className="btn btn-sm btn-secondary"
                         >
                           Add Notes
+                        </Link>
+                      )}
+
+                      {user.role === 'doctor' && (appointment.status === 'approved' || appointment.status === 'completed') && (
+                        <Link
+                          to={`/consultations/new?appointmentId=${appointment.id}`}
+                          className="btn btn-sm btn-primary"
+                        >
+                          Write Consultation
                         </Link>
                       )}
                     </div>
