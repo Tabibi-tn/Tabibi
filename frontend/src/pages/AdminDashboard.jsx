@@ -1,16 +1,18 @@
-import React, { useEffect, useState, useContext } from 'react'
+import { useEffect, useState } from 'react'
 import api from '../api'
-import { AuthContext } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
+import { useToast } from '../contexts/ToastContext'
 
 export default function AdminDashboard(){
-  const { user } = useContext(AuthContext)
+  const { toast } = useToast()
   const [users, setUsers] = useState([])
   const [pendingDoctors, setPendingDoctors] = useState([])
   const [stats, setStats] = useState({ users: 0, doctors: 0, patients: 0, appointments: 0 })
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('users')
   const [selectedDoctor, setSelectedDoctor] = useState(null)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -34,29 +36,33 @@ export default function AdminDashboard(){
   const handleToggleUserActive = async (userId, currentStatus) => {
     try {
       await api.put(`/users/${userId}/toggle-active`)
-      setUsers(users.map(u => 
-        u.id === userId ? { ...u, isActive: !currentStatus } : u
-      ))
+      setUsers(users.map(u => u.id === userId ? { ...u, isActive: !currentStatus } : u))
+      toast(currentStatus ? 'User deactivated' : 'User activated', 'success')
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update user status')
+      const msg = err.response?.data?.message || 'Failed to update user status'
+      setError(msg)
+      toast(msg, 'error')
     }
   }
 
   const handleApproveDoctor = async (doctorId, status) => {
-    let rejectionReason = null
-    if (status === 'rejected') {
-      rejectionReason = prompt('Please provide a reason for rejection:')
-      if (!rejectionReason) return
+    if (status === 'rejected' && !rejectionReason.trim()) {
+      setError('Please provide a rejection reason before rejecting.')
+      return
     }
-    
+    setError('')
     try {
-      await api.put(`/users/doctors/${doctorId}/approve`, { status, rejectionReason })
+      await api.put(`/users/doctors/${doctorId}/approve`, { status, rejectionReason: rejectionReason || null })
       setPendingDoctors(pendingDoctors.filter(d => d.id !== doctorId))
       setSelectedDoctor(null)
+      setRejectionReason('')
+      toast(status === 'approved' ? 'Doctor approved successfully' : 'Doctor application rejected', status === 'approved' ? 'success' : 'warning')
       const usersRes = await api.get('/users')
       setUsers(usersRes.data)
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update doctor status')
+      const msg = err.response?.data?.message || 'Failed to update doctor status'
+      setError(msg)
+      toast(msg, 'error')
     }
   }
 
@@ -94,6 +100,12 @@ export default function AdminDashboard(){
             <Link to="/doctors" className="btn btn-primary">Manage Doctors</Link>
           </div>
         </div>
+
+        {error && (
+          <div className="alert alert-error" style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: 'var(--radius)', background: '#fef2f2', color: 'var(--error)', border: '1px solid var(--error)' }}>
+            {error}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="admin-stats">
@@ -171,15 +183,15 @@ export default function AdminDashboard(){
                         >
                           View Details
                         </button>
-                        <button 
+                        <button
                           className="btn btn-success btn-sm"
                           onClick={() => handleApproveDoctor(doc.id, 'approved')}
                         >
                           Approve
                         </button>
-                        <button 
+                        <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => handleApproveDoctor(doc.id, 'rejected')}
+                          onClick={() => { setSelectedDoctor(doc); setRejectionReason('') }}
                         >
                           Reject
                         </button>
@@ -307,9 +319,9 @@ export default function AdminDashboard(){
             <div className="card" style={{ maxWidth: '700px', width: '90%', maxHeight: '90vh', overflow: 'auto' }}>
               <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 className="card-title">Doctor Application Details</h3>
-                <button 
+                <button
                   className="btn btn-ghost btn-sm"
-                  onClick={() => setSelectedDoctor(null)}
+                  onClick={() => { setSelectedDoctor(null); setRejectionReason(''); setError('') }}
                   style={{ fontSize: '1.5rem', lineHeight: 1 }}
                 >
                   ×
@@ -435,15 +447,40 @@ export default function AdminDashboard(){
                   </span>
                 </div>
 
+                {/* Rejection Reason */}
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label className="form-label" style={{ fontSize: '0.875rem' }}>
+                    Rejection reason <span style={{ color: 'var(--gray-400)', fontWeight: 400 }}>(required when rejecting)</span>
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    rows={2}
+                    placeholder="Provide a reason for rejection..."
+                    value={rejectionReason}
+                    onChange={e => setRejectionReason(e.target.value)}
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+
+                {error && (
+                  <div style={{ color: 'var(--error)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>{error}</div>
+                )}
+
                 {/* Action Buttons */}
                 <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                  <button 
+                  <button
+                    className="btn btn-ghost"
+                    onClick={() => { setSelectedDoctor(null); setRejectionReason(''); setError('') }}
+                  >
+                    Cancel
+                  </button>
+                  <button
                     className="btn btn-danger"
                     onClick={() => handleApproveDoctor(selectedDoctor.id, 'rejected')}
                   >
                     Reject Application
                   </button>
-                  <button 
+                  <button
                     className="btn btn-success"
                     onClick={() => handleApproveDoctor(selectedDoctor.id, 'approved')}
                   >

@@ -1,4 +1,12 @@
 require('dotenv').config();
+
+// Prevent unhandled rejections / exceptions from killing the process
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');

@@ -5,7 +5,8 @@ module.exports = (sequelize, DataTypes) => {
     doctorId: { type: DataTypes.INTEGER.UNSIGNED, allowNull: false },
     date: { type: DataTypes.DATEONLY, allowNull: false },
     time: { type: DataTypes.TIME, allowNull: false },
-    status: { type: DataTypes.ENUM('pending','approved','cancelled','completed'), defaultValue: 'pending' }
+    status: { type: DataTypes.ENUM('pending','approved','cancelled','completed'), defaultValue: 'pending' },
+    notes: { type: DataTypes.TEXT, allowNull: true }
   }, {});
 
   Appointment.associate = models => {

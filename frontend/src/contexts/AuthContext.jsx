@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react'
+import { createContext, useState, useEffect } from 'react'
 import api from '../api'
 
 export const AuthContext = createContext()
@@ -6,16 +6,24 @@ export const AuthContext = createContext()
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [doctorProfile, setDoctorProfile] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
   useEffect(() => {
     const raw = localStorage.getItem('tabibi_user')
     if (raw) {
-      const userData = JSON.parse(raw)
-      setUser(userData)
-      if (userData.role === 'doctor') {
-        fetchDoctorProfile()
+      try {
+        const userData = JSON.parse(raw)
+        setUser(userData)
+        if (userData.role === 'doctor') {
+          fetchDoctorProfile().finally(() => setAuthLoading(false))
+          return
+        }
+      } catch {
+        localStorage.removeItem('tabibi_user')
+        localStorage.removeItem('tabibi_token')
       }
     }
+    setAuthLoading(false)
   }, [])
 
   async function fetchDoctorProfile() {
@@ -27,11 +35,11 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const login = async (token, user) => {
+  const login = async (token, userData) => {
     localStorage.setItem('tabibi_token', token)
-    localStorage.setItem('tabibi_user', JSON.stringify(user))
-    setUser(user)
-    if (user.role === 'doctor') {
+    localStorage.setItem('tabibi_user', JSON.stringify(userData))
+    setUser(userData)
+    if (userData.role === 'doctor') {
       await fetchDoctorProfile()
     }
   }
@@ -45,16 +53,13 @@ export const AuthProvider = ({ children }) => {
 
   const needsProfileCompletion = () => {
     if (!user || user.role !== 'doctor') return false
-    // If doctorStatus is 'needs_profile', they need to complete profile
     if (user.doctorStatus === 'needs_profile') return true
-    // If no doctor profile exists, they need to complete profile
-    if (!doctorProfile) return true
-    // Check if required fields are missing
+    if (!doctorProfile) return false
     return !doctorProfile.specialtyId || !doctorProfile.licenseNumber || !doctorProfile.diplomaUrl || !doctorProfile.licenseDocUrl
   }
 
   return (
-    <AuthContext.Provider value={{ user, doctorProfile, login, logout, needsProfileCompletion }}>
+    <AuthContext.Provider value={{ user, setUser, doctorProfile, authLoading, login, logout, needsProfileCompletion, fetchDoctorProfile }}>
       {children}
     </AuthContext.Provider>
   )

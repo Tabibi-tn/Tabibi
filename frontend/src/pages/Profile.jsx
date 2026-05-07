@@ -1,9 +1,11 @@
-import React, { useState, useContext, useEffect } from 'react'
+import { useState, useContext } from 'react'
 import { AuthContext } from '../contexts/AuthContext'
-import  api  from '../api'
+import api from '../api'
+import { useToast } from '../contexts/ToastContext'
 
 export default function Profile() {
   const { user, setUser } = useContext(AuthContext)
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const [activeTab, setActiveTab] = useState('profile')
@@ -40,14 +42,16 @@ export default function Profile() {
     setMessage({ type: '', text: '' })
 
     try {
-      const response = await api.put('/users/profile', profileData)
-      setUser({ ...user, ...profileData })
+      await api.put('/users/profile', profileData)
+      const updatedUser = { ...user, ...profileData }
+      setUser(updatedUser)
+      localStorage.setItem('tabibi_user', JSON.stringify(updatedUser))
       setMessage({ type: 'success', text: 'Profile updated successfully!' })
+      toast('Profile updated successfully!', 'success')
     } catch (err) {
-      setMessage({ 
-        type: 'error', 
-        text: err.response?.data?.message || 'Failed to update profile' 
-      })
+      const msg = err.response?.data?.message || 'Failed to update profile'
+      setMessage({ type: 'error', text: msg })
+      toast(msg, 'error')
     } finally {
       setLoading(false)
     }
@@ -55,7 +59,7 @@ export default function Profile() {
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setMessage({ type: 'error', text: 'New passwords do not match' })
       return
@@ -75,12 +79,12 @@ export default function Profile() {
         newPassword: passwordData.newPassword
       })
       setMessage({ type: 'success', text: 'Password updated successfully!' })
+      toast('Password updated successfully!', 'success')
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (err) {
-      setMessage({ 
-        type: 'error', 
-        text: err.response?.data?.message || 'Failed to update password' 
-      })
+      const msg = err.response?.data?.message || 'Failed to update password'
+      setMessage({ type: 'error', text: msg })
+      toast(msg, 'error')
     } finally {
       setLoading(false)
     }
@@ -99,7 +103,7 @@ export default function Profile() {
           <p className="page-subtitle">Manage your account settings and preferences</p>
         </div>
 
-        <div className="grid grid-3" style={{ gap: '2rem' }}>
+        <div className="profile-grid">
           {/* Profile Sidebar */}
           <div className="card" style={{ padding: '1.5rem', height: 'fit-content' }}>
             <div style={{ textAlign: 'center', padding: '1rem' }}>
@@ -201,7 +205,7 @@ export default function Profile() {
           </div>
 
           {/* Main Content */}
-          <div style={{ gridColumn: 'span 2' }}>
+          <div>
             {message.text && (
               <div className={`alert alert-${message.type}`} style={{
                 padding: '1rem',

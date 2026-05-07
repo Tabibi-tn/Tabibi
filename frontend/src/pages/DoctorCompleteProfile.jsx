@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import api from '../api'
 import { AuthContext } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../contexts/ToastContext'
 
 export default function DoctorCompleteProfile(){
   const { user } = useContext(AuthContext)
+  const { toast } = useToast()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [specialties, setSpecialties] = useState([])
@@ -67,11 +69,14 @@ export default function DoctorCompleteProfile(){
       const res = await api.post('/doctors/me/upload-document', formDataUpload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      
-      setFormData(prev => ({ ...prev, [fieldName]: res.data.fileUrl }))
+
+      const fieldKey = fieldName === 'diploma' ? 'diplomaUrl' : fieldName === 'license' ? 'licenseDocUrl' : fieldName
+      setFormData(prev => ({ ...prev, [fieldKey]: res.data.fileUrl }))
       setError('')
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to upload file')
+      const msg = err.response?.data?.message || 'Failed to upload file'
+      setError(msg)
+      toast(msg, 'error')
     } finally {
       setUploading(false)
     }
@@ -92,9 +97,12 @@ export default function DoctorCompleteProfile(){
     try {
       await api.post('/doctors/me/complete-profile', formData)
       setSuccess(true)
+      toast('Profile submitted for review!', 'success')
       setTimeout(() => navigate('/dashboard'), 2000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile')
+      const msg = err.response?.data?.message || 'Failed to update profile'
+      setError(msg)
+      toast(msg, 'error')
     } finally {
       setLoading(false)
     }
